@@ -1,0 +1,10 @@
+node_modules/
+coverage/
+.idea/
+.vscode/
+*.log
+build/
+dist/
+ios/
+android/
+

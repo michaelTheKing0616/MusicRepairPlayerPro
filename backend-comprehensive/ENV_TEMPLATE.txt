@@ -1,0 +1,33 @@
+# Copy this file to .env and fill in your values
+
+# Server
+PORT=3000
+NODE_ENV=development
+
+# Database (Supabase)
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# JWT
+JWT_SECRET=your_jwt_secret_here
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_here
+JWT_EXPIRES_IN=1h
+JWT_REFRESH_EXPIRES_IN=7d
+
+# CORS
+CORS_ORIGIN=http://localhost:8081
+
+# OpenAI (for AI features)
+OPENAI_API_KEY=your_openai_api_key
+
+# File Upload
+MAX_FILE_SIZE=100000000
+UPLOAD_PATH=./uploads
+
+# Logging
+LOG_LEVEL=info
+

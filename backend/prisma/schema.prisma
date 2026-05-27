@@ -1,0 +1,90 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  audioFiles AudioFile[]
+  repairRequests AudioRepairRequest[]
+
+  @@map("users")
+}
+
+model AudioFile {
+  id               String   @id @default(uuid())
+  userId           String
+  filename         String
+  originalFilename String
+  fileSize         Int      // in bytes
+  duration         Float?   // in seconds
+  mimeType         String
+  supabaseUrl      String
+  supabasePath     String
+  status           AudioFileStatus @default(UPLOADED)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repairRequests AudioRepairRequest[]
+
+  @@map("audio_files")
+}
+
+model AudioRepairRequest {
+  id              String   @id @default(uuid())
+  audioFileId     String
+  userId          String
+  modelType       RepairModelType
+  status          RepairRequestStatus @default(PENDING)
+  errorMessage    String?
+  repairedAudioUrl String?
+  repairedAudioPath String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  audioFile AudioFile @relation(fields: [audioFileId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audio_repair_requests")
+}
+
+enum AudioFileStatus {
+  UPLOADED
+  PROCESSING
+  COMPLETED
+  FAILED
+
+  @@map("audio_file_status")
+}
+
+enum RepairModelType {
+  DEEPFILTERNET
+  DEMUCS
+  UVR
+
+  @@map("repair_model_type")
+}
+
+enum RepairRequestStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+
+  @@map("repair_request_status")
+}
+

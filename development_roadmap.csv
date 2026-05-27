@@ -1,0 +1,49 @@
+Month,Week,Milestone,Deliverable,Owner,Acceptance_Criteria,Priority,Status,Dependencies
+1,1,Infrastructure Setup,Cloud infrastructure provisioned (GPU workers, storage, DB),Backend Dev,"GPU workers accessible, S3 storage configured, PostgreSQL running, monitoring dashboards live",High,Not Started,
+1,1,Development Environment,Dev/staging environments configured,Backend Dev,"CI/CD pipeline functional, environment variables set, deployment scripts tested",High,Not Started,
+1,2,API Foundation,Basic REST API structure with health checks,Backend Dev,"API returns 200 on /health, OpenAPI docs generated, error handling middleware in place",High,Not Started,Infrastructure Setup
+1,2,Mobile App Scaffold,iOS and Android app projects initialized,Mobile Dev,"App builds successfully, navigation structure in place, basic UI components ready",High,Not Started,
+1,3,Audio Upload API,Multipart upload endpoint with validation,Backend Dev,"Upload accepts WAV/MP3 up to 500MB, validates format, stores in S3, returns job ID",High,Not Started,API Foundation
+1,3,Upload UI,File picker and upload screen in mobile apps,Mobile Dev,"Users can select audio files, see upload progress, receive upload confirmation",High,Not Started,Mobile App Scaffold
+1,4,Job Queue System,Job queue with Redis/RabbitMQ integration,Backend Dev,"Jobs created on upload, queue monitoring works, job status endpoints functional",High,Not Started,API Foundation
+2,1,Model Registry,Model registry service with Hugging Face integration,ML Engineer,"Demucs model downloads and caches successfully, model versioning system works",High,Not Started,Infrastructure Setup
+2,2,Stem Separation Core,Demucs v4 integration for 4-stem separation,ML Engineer,"Separates audio into vocals/drums/bass/other with >80% SDR, processes 3min audio in <2min on GPU",High,Not Started,Model Registry
+2,2,Stem Separation API,API endpoint to trigger stem separation,Backend Dev,"POST /api/v1/stem-separation accepts job ID, queues processing, returns status",High,Not Started,"Job Queue System;Stem Separation Core"
+2,3,Stem Preview,Display separated stems in mobile UI,Mobile Dev,"Users can preview/listen to separated stems, see waveform visualization",High,Not Started,"Stem Separation API;Upload UI"
+2,3,Worker Orchestration,GPU worker pool with load balancing,Backend Dev,"Workers pull jobs from queue, process concurrently, handle failures gracefully",High,Not Started,Stem Separation Core
+2,4,Content Extraction,Whisper integration for transcription/metadata,ML Engineer,"Extracts transcription, timestamps, language from audio, processes in <30s for 3min audio",Medium,Not Started,Model Registry
+3,1,Voice Model Library,5-10 pre-trained voice preset models (FreeVC),ML Engineer,"Models convert source voice to target voice with MOS >3.5, inference <1min for 3min audio",High,Not Started,Model Registry
+3,2,Style Preset Library,5-10 style transformation presets (genre/instrument),ML Engineer,"Style transfers maintain audio quality (SDR >70%), processing <1min for 3min audio",High,Not Started,Model Registry
+3,3,Voice Transform API,API endpoint for voice conversion,Backend Dev,"POST /api/v1/transform/voice accepts job ID + voice preset, queues processing",High,Not Started,"Voice Model Library;Worker Orchestration"
+3,3,Style Transform API,API endpoint for style transfer,Backend Dev,"POST /api/v1/transform/style accepts job ID + style preset, queues processing",High,Not Started,"Style Preset Library;Worker Orchestration"
+3,4,Transform UI,Preset selection and transformation interface,Mobile Dev,"Users can select voice/style presets, preview samples, trigger transformation, see progress",High,Not Started,"Voice Transform API;Style Transform API"
+4,1,Neural Vocoder,HiFi-GAN integration for high-quality synthesis,ML Engineer,"Vocoder outputs 48kHz audio with natural quality (MOS >4.0), processes in <30s",High,Not Started,Model Registry
+4,2,Post-Processing Pipeline,Audio mastering (normalization, EQ, format conversion),DSP Engineer,"Pipeline normalizes LUFS to -16, applies gentle EQ, converts to MP3/WAV formats",High,Not Started,Neural Vocoder
+4,3,Single-Track Conversion,End-to-end conversion pipeline (upload → transform → output),Backend Dev,"Complete pipeline processes audio through all stages, handles errors at each step",High,Not Started,"Voice Transform API;Style Transform API;Post-Processing Pipeline"
+4,4,Download API,Audio download endpoint with CDN integration,Backend Dev,"GET /api/v1/jobs/{id}/download returns processed audio, CDN caching works, signed URLs for security",High,Not Started,Single-Track Conversion
+5,1,Download UI,Download functionality in mobile apps,Mobile Dev,"Users can download processed audio, see download progress, files saved to device",High,Not Started,Download API
+5,1,User Account System,User registration and authentication,Backend Dev,"POST /api/v1/auth/register, JWT token generation, password hashing, email verification",High,Not Started,API Foundation
+5,2,Auth Integration,Login/signup screens and token management,Mobile Dev,"Users can register, login, logout, tokens stored securely, session persists across app restarts",High,Not Started,User Account System
+5,3,Consent System,User consent collection for audio processing,Legal,Backend Dev,"Consent API stores user agreements, GDPR-compliant consent flow, audit trail maintained",High,Not Started,User Account System
+5,3,Consent UI,Legal opt-in screens with clear explanations,Legal,Mobile Dev,"Users see consent forms, must agree to terms before uploading, consent status displayed",High,Not Started,Consent System
+5,4,Privacy Policy,Privacy policy document and API integration,Legal,"Privacy policy published, linked in app, covers data collection, processing, retention, user rights",High,Not Started,
+5,4,Terms of Service,Terms of service document and acceptance flow,Legal,"ToS published, covers usage rights, prohibited uses, intellectual property, liability limits",High,Not Started,
+6,1,Analytics Foundation,Analytics service with event tracking,Backend Dev,"Events logged: uploads, transformations, downloads, errors; dashboard shows metrics",Medium,Not Started,API Foundation
+6,1,Analytics Integration,Analytics SDK in mobile apps,Mobile Dev,"App tracks user actions, sends events to backend, respects privacy settings",Medium,Not Started,Analytics Foundation
+6,2,Beta Testing,Internal beta with 10-20 test users,QA,"Test users complete 5+ transformations each, feedback collected, critical bugs identified and logged",High,Not Started,"Single-Track Conversion;Auth Integration"
+6,3,Bug Fixes Round 1,Fix critical and high-priority bugs,All,"All P0/P1 bugs resolved, test suite passes, no regressions introduced",High,Not Started,Beta Testing
+6,4,Performance Optimization,Optimize processing times and resource usage,ML Engineer,Backend Dev,"Average processing time <2min for 3min audio, GPU utilization >70%, API latency <200ms p95",High,Not Started,Single-Track Conversion
+7,1,MVP Launch Prep,App store submissions (iOS/Android),PM,"Apps submitted to App Store and Play Store, all metadata complete, screenshots/videos ready",High,Not Started,"Bug Fixes Round 1;Privacy Policy;Terms of Service"
+7,1,Launch Monitoring,Dashboards and alerts for launch day,Backend Dev,"Real-time monitoring active, alert rules configured, incident response plan documented",High,Not Started,Analytics Foundation
+7,2,MVP Launch,Public launch announcement and app release,PM,"Apps live in stores, marketing materials published, support channels open, launch metrics tracked",High,Not Started,MVP Launch Prep
+POST-MVP: Month 7,1,Auto-Scaling,GPU worker auto-scaling based on queue depth,Backend Dev,"Workers scale up to 10 during peak, down to 1 during off-peak, spot instance integration",Medium,Not Started,
+POST-MVP: Month 7,2,Model Caching,Optimized model loading and GPU memory management,ML Engineer,"Models cached in GPU memory, LRU eviction, 50% reduction in cold-start time",Medium,Not Started,
+POST-MVP: Month 7,3,Batch Processing,Job batching for improved GPU utilization,ML Engineer,Backend Dev,"Similar jobs batched automatically, 2-3x throughput improvement, queue depth reduced",Medium,Not Started,Auto-Scaling
+POST-MVP: Month 8,1,Model Marketplace Foundation,Infrastructure for user-submitted models,Backend Dev,"Model upload API, validation pipeline, storage system for community models",Low,Not Started,
+POST-MVP: Month 8,2,Marketplace UI,Model marketplace interface in mobile app,Mobile Dev,"Users can browse, search, preview, and use community models, rating system in place",Low,Not Started,Model Marketplace Foundation
+POST-MVP: Month 8,3,Model Submission,Tools for users to submit custom models,ML Engineer,"Model submission workflow, quality checks, moderation system",Low,Not Started,Model Marketplace Foundation
+POST-MVP: Month 9,1,Real-Time Preview Gateway,WebSocket service for live preview,Backend Dev,ML Engineer,"WebSocket server operational, lightweight models for <500ms latency, mobile integration",Medium,Not Started,
+POST-MVP: Month 9,2,Real-Time UI,Live preview interface in mobile apps,Mobile Dev,"Users see real-time transformation preview, low latency, smooth UI updates",Medium,Not Started,Real-Time Preview Gateway
+POST-MVP: Month 9,3,Community Features,User profiles, sharing, social feed,Backend Dev,Mobile Dev,"Users can create profiles, share transformations, follow others, browse community feed",Low,Not Started,User Account System
+POST-MVP: Month 9,4,Advanced Analytics,Enhanced analytics with user segmentation,Backend Dev,"User cohorts, conversion funnels, retention analysis, A/B testing framework",Low,Not Started,Analytics Foundation
+

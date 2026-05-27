@@ -1,0 +1,80 @@
+Collecting demucs
+  Using cached demucs-4.0.1.tar.gz (1.2 MB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting dora-search (from demucs)
+  Downloading dora_search-0.1.12.tar.gz (87 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting einops (from demucs)
+  Downloading einops-0.8.1-py3-none-any.whl.metadata (13 kB)
+Collecting julius>=0.2.3 (from demucs)
+  Downloading julius-0.2.7.tar.gz (59 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Collecting lameenc>=1.2 (from demucs)
+  Downloading lameenc-1.8.1-cp312-cp312-win_amd64.whl.metadata (10 kB)
+Collecting openunmix (from demucs)
+  Downloading openunmix-1.3.0-py3-none-any.whl.metadata (17 kB)
+Requirement already satisfied: pyyaml in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from demucs) (6.0.2)
+Requirement already satisfied: torch>=1.8.1 in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from demucs) (2.9.1)
+Requirement already satisfied: torchaudio>=0.8 in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from demucs) (2.9.1)
+Requirement already satisfied: tqdm in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from demucs) (4.66.1)
+Requirement already satisfied: filelock in c:\users\hp\appdata\roaming\python\python312\site-packages (from torch>=1.8.1->demucs) (3.18.0)
+Requirement already satisfied: typing-extensions>=4.10.0 in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from torch>=1.8.1->demucs) (4.13.2)
+Requirement already satisfied: sympy>=1.13.3 in c:\users\hp\appdata\roaming\python\python312\site-packages (from torch>=1.8.1->demucs) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in c:\users\hp\appdata\roaming\python\python312\site-packages (from torch>=1.8.1->demucs) (3.4.2)
+Requirement already satisfied: jinja2 in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from torch>=1.8.1->demucs) (3.1.3)
+Requirement already satisfied: fsspec>=0.8.5 in c:\users\hp\appdata\roaming\python\python312\site-packages (from torch>=1.8.1->demucs) (2025.3.2)
+Requirement already satisfied: setuptools in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from torch>=1.8.1->demucs) (80.9.0)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in c:\users\hp\appdata\roaming\python\python312\site-packages (from sympy>=1.13.3->torch>=1.8.1->demucs) (1.3.0)
+Collecting omegaconf (from dora-search->demucs)
+  Downloading omegaconf-2.3.0-py3-none-any.whl.metadata (3.9 kB)
+Collecting retrying (from dora-search->demucs)
+  Downloading retrying-1.4.2-py3-none-any.whl.metadata (5.5 kB)
+Collecting submitit (from dora-search->demucs)
+  Downloading submitit-1.5.3-py3-none-any.whl.metadata (7.9 kB)
+Collecting treetable (from dora-search->demucs)
+  Downloading treetable-0.2.6-py3-none-any.whl.metadata (5.3 kB)
+Requirement already satisfied: MarkupSafe>=2.0 in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from jinja2->torch>=1.8.1->demucs) (2.1.3)
+Collecting antlr4-python3-runtime==4.9.* (from omegaconf->dora-search->demucs)
+  Downloading antlr4-python3-runtime-4.9.3.tar.gz (117 kB)
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Requirement already satisfied: numpy in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from openunmix->demucs) (1.26.3)
+Collecting cloudpickle>=1.2.1 (from submitit->dora-search->demucs)
+  Downloading cloudpickle-3.1.2-py3-none-any.whl.metadata (7.1 kB)
+Requirement already satisfied: colorama in c:\users\hp\appdata\local\programs\python\python312\lib\site-packages (from tqdm->demucs) (0.4.6)
+Downloading lameenc-1.8.1-cp312-cp312-win_amd64.whl (152 kB)
+Downloading einops-0.8.1-py3-none-any.whl (64 kB)
+Downloading omegaconf-2.3.0-py3-none-any.whl (79 kB)
+Downloading openunmix-1.3.0-py3-none-any.whl (40 kB)
+Downloading retrying-1.4.2-py3-none-any.whl (10 kB)
+Downloading submitit-1.5.3-py3-none-any.whl (75 kB)
+Downloading cloudpickle-3.1.2-py3-none-any.whl (22 kB)
+Downloading treetable-0.2.6-py3-none-any.whl (7.4 kB)
+Building wheels for collected packages: demucs, julius, dora-search, antlr4-python3-runtime
+  Building wheel for demucs (setup.py): started
+  Building wheel for demucs (setup.py): finished with status 'done'
+  Created wheel for demucs: filename=demucs-4.0.1-py3-none-any.whl size=78552 sha256=147100f960f58ae7b105aefb3f4d7f9548c24cb33839d6a8ff30afbb27e4e1ef
+  Stored in directory: c:\users\hp\appdata\local\pip\cache\wheels\1b\0c\20\a3b3daa1f9b65c8b0445729f94740ec335d0f86f1066c5c414
+  Building wheel for julius (setup.py): started
+  Building wheel for julius (setup.py): finished with status 'done'
+  Created wheel for julius: filename=julius-0.2.7-py3-none-any.whl size=22017 sha256=ad6db78fb1106f3571a1a0c6eab273795a1a0ac34999207511e4e92483668e50
+  Stored in directory: c:\users\hp\appdata\local\pip\cache\wheels\de\c1\ca\544dafe48401e8e2e17064dfe465a390fca9e8720ffa12e744
+  Building wheel for dora-search (pyproject.toml): started
+  Building wheel for dora-search (pyproject.toml): finished with status 'done'
+  Created wheel for dora-search: filename=dora_search-0.1.12-py3-none-any.whl size=75319 sha256=db1173879eb7c1368003fa1475d37af82cb2aced69cd3099e2cff16cacc0109b
+  Stored in directory: c:\users\hp\appdata\local\pip\cache\wheels\55\40\4c\3478187386b56625ab5aa8a9070ff1eea704ddb27d15abe73f
+  Building wheel for antlr4-python3-runtime (setup.py): started
+  Building wheel for antlr4-python3-runtime (setup.py): finished with status 'done'
+  Created wheel for antlr4-python3-runtime: filename=antlr4_python3_runtime-4.9.3-py3-none-any.whl size=144615 sha256=19c784d9ce5d0f9647318fe23b77c86fe93a7f9efc22c50a5f8bb5592f0a9ed8
+  Stored in directory: c:\users\hp\appdata\local\pip\cache\wheels\1f\be\48\13754633f1d08d1fbfc60d5e80ae1e5d7329500477685286cd
+Successfully built demucs julius dora-search antlr4-python3-runtime
+Installing collected packages: lameenc, antlr4-python3-runtime, treetable, retrying, omegaconf, einops, cloudpickle, submitit, julius, dora-search, openunmix, demucs
+
+Successfully installed antlr4-python3-runtime-4.9.3 cloudpickle-3.1.2 demucs-4.0.1 dora-search-0.1.12 einops-0.8.1 julius-0.2.7 lameenc-1.8.1 omegaconf-2.3.0 openunmix-1.3.0 retrying-1.4.2 submitit-1.5.3 treetable-0.2.6

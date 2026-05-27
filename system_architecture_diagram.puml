@@ -1,0 +1,143 @@
+@startuml System Architecture
+!define CLIENT_COLOR #e1f5ff
+!define SERVICE_COLOR #f3e5f5
+!define STORAGE_COLOR #e8f5e9
+!define INFERENCE_COLOR #fff3e0
+!define ML_COLOR #fce4ec
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+package "Client Layer" #CLIENT_COLOR {
+    component [iOS App\nSwift/SwiftUI] as iOS
+    component [Android App\nKotlin/Compose] as Android
+    component [Web Client\nReact/Next.js] as Web
+}
+
+cloud "API Gateway" as API {
+}
+
+package "Auth & Services" #SERVICE_COLOR {
+    component [Auth Service\nJWT/OAuth2] as Auth
+    component [Billing Service\nStripe Integration] as Billing
+    component [Upload Service\nMultipart Upload] as Upload
+    component [Real-time Preview Gateway\nWebSocket + TensorFlow Lite] as Preview
+}
+
+package "Job Management" #SERVICE_COLOR {
+    queue "Job Queue\nRabbitMQ/Redis Queue" as Queue
+    component [Job Scheduler\nCelery Beat] as Scheduler
+}
+
+package "Storage Layer" #STORAGE_COLOR {
+    database "Raw Audio Storage\nMinIO/S3" as S3Raw
+    database "Processed Audio Storage\nMinIO/S3" as S3Processed
+    database "Redis Cache\nResults & Metadata" as Cache
+    database "PostgreSQL\nJob Metadata & Users" as DB
+}
+
+package "Model Registry" #ML_COLOR {
+    component [Model Registry\nHugging Face Hub\nLocal Cache] as Registry
+}
+
+package "Inference Cluster" #INFERENCE_COLOR {
+    component [Load Balancer\nNginx/Traefik] as LB
+    
+    package "GPU Workers" {
+        component [Worker 1\nCUDA 11.8+] as W1
+        component [Worker 2\nCUDA 11.8+] as W2
+        component [Worker N\nCUDA 11.8+] as W3
+    }
+    
+    package "Processing Pipeline" #ML_COLOR {
+        component [Stem Separator\nDemucs v4/hybrid-transformer] as StemSep
+        component [Content Extractor\nWhisper/WhisperX] as ContentExt
+        component [Voice/Style Transformer\nFreeVC/SO-VITS-SVC\nStyle Transfer: DiffSinger] as VoiceStyle
+        component [Neural Vocoder\nHiFi-GAN/BigVGAN] as Vocoder
+        component [Post-Mastering\nAudioSR + librosa] as PostMaster
+    }
+}
+
+package "Delivery & Monitoring" #SERVICE_COLOR {
+    cloud "CDN\nCloudflare/Vercel Edge" as CDN
+    component [Telemetry Service\nPrometheus + Grafana] as Telemetry
+    component [Admin Console\nReact Dashboard] as Admin
+}
+
+' Client connections
+iOS --> API
+Android --> API
+Web --> API
+
+' API Gateway routing
+API --> Auth
+API --> Upload
+API --> Preview
+API --> CDN
+API --> Billing
+API --> Admin
+
+' Upload flow
+Upload --> S3Raw
+Upload --> Queue
+Queue --> Scheduler
+Scheduler --> LB
+
+' Storage connections
+Queue --> DB
+W1 --> DB
+W2 --> DB
+W3 --> DB
+W1 --> Cache
+W2 --> Cache
+W3 --> Cache
+W1 --> S3Raw
+W2 --> S3Raw
+W3 --> S3Raw
+W1 --> S3Processed
+W2 --> S3Processed
+W3 --> S3Processed
+
+' Inference flow
+LB --> W1
+LB --> W2
+LB --> W3
+
+W1 --> StemSep
+W2 --> StemSep
+W3 --> StemSep
+
+StemSep --> ContentExt
+ContentExt --> VoiceStyle
+VoiceStyle --> Vocoder
+Vocoder --> PostMaster
+PostMaster --> S3Processed
+
+' Model loading
+StemSep --> Registry
+ContentExt --> Registry
+VoiceStyle --> Registry
+Vocoder --> Registry
+
+' Real-time preview
+iOS ..> Preview : WebSocket
+Android ..> Preview : WebSocket
+Web ..> Preview : WebSocket
+Preview --> Cache
+
+' Delivery
+S3Processed --> CDN
+CDN --> iOS
+CDN --> Android
+CDN --> Web
+
+' Monitoring
+W1 --> Telemetry
+W2 --> Telemetry
+W3 --> Telemetry
+Queue --> Telemetry
+Telemetry --> Admin
+DB --> Admin
+
+@enduml
+

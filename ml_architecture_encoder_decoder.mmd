@@ -1,0 +1,59 @@
+graph LR
+    subgraph Input["Input Audio"]
+        A[Raw Audio<br/>44.1 kHz WAV]
+    end
+    
+    subgraph Preprocessing["Pre-Processing"]
+        B[Stem Separation<br/>Demucs v4]
+        C[Vocal Extraction<br/>Vocals Stem]
+        D[Content Encoder<br/>WhisperX]
+        E[Pitch Extraction<br/>CREPE/PyWorld]
+    end
+    
+    subgraph Encoding["Feature Encoding"]
+        F[Content Features<br/>HuBERT/Wav2Vec2]
+        G[Speaker Embeddings<br/>Target Voice]
+        H[Pitch Curve<br/>F0]
+    end
+    
+    subgraph Conversion["Voice Conversion"]
+        I[FreeVC Model<br/>Encoder-Decoder]
+        J[Style Transfer<br/>DiffSinger]
+    end
+    
+    subgraph Synthesis["Vocoder Synthesis"]
+        K[HiFi-GAN<br/>Neural Vocoder]
+    end
+    
+    subgraph Postprocessing["Post-Processing"]
+        L[Denoising<br/>DeepFilterNet]
+        M[Loudness Norm<br/>pyloudnorm]
+        N[Format Conversion<br/>librosa]
+    end
+    
+    subgraph Output["Output"]
+        O[Converted Audio<br/>44.1 kHz WAV]
+    end
+    
+    A --> B
+    B --> C
+    C --> D
+    C --> E
+    D --> F
+    E --> H
+    G --> I
+    F --> I
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    L --> M
+    M --> N
+    N --> O
+    
+    style B fill:#e1f5ff
+    style D fill:#e1f5ff
+    style I fill:#f3e5f5
+    style J fill:#f3e5f5
+    style K fill:#e8f5e9
+

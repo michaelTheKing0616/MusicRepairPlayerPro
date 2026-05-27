@@ -1,0 +1,131 @@
+flowchart TB
+    %% Client Layer
+    subgraph Clients["Client Layer"]
+        iOS["iOS App<br/>(Swift/SwiftUI)"]
+        Android["Android App<br/>(Kotlin/Compose)"]
+        Web["Web Client<br/>(React/Next.js)"]
+    end
+
+    %% API Gateway
+    API["API Gateway<br/>(REST + WebSocket)"]
+    
+    %% Auth & Billing
+    Auth["Auth Service<br/>(JWT/OAuth2)"]
+    Billing["Billing Service<br/>(Stripe Integration)"]
+    
+    %% Upload & Job Management
+    Upload["Upload Service<br/>(Multipart Upload)"]
+    Queue["Job Queue<br/>(RabbitMQ/Redis Queue)"]
+    Scheduler["Job Scheduler<br/>(Celery Beat)"]
+    
+    %% Storage Layer
+    subgraph Storage["Storage Layer"]
+        S3Raw["Raw Audio Storage<br/>(MinIO/S3)"]
+        S3Processed["Processed Audio Storage<br/>(MinIO/S3)"]
+        Cache["Redis Cache<br/>(Results & Metadata)"]
+        DB[(PostgreSQL<br/>Job Metadata & Users)]
+    end
+    
+    %% Model Registry
+    Registry["Model Registry<br/>(Hugging Face Hub<br/>Local Cache)"]
+    
+    %% Inference Cluster
+    subgraph Inference["Inference Cluster"]
+        LB["Load Balancer<br/>(Nginx/Traefik)"]
+        
+        subgraph Workers["GPU Workers"]
+            W1["Worker 1<br/>(CUDA 11.8+)"]
+            W2["Worker 2<br/>(CUDA 11.8+)"]
+            W3["Worker N<br/>(CUDA 11.8+)"]
+        end
+        
+        subgraph Pipeline["Processing Pipeline"]
+            StemSep["Stem Separator<br/>(Demucs v4/hybrid-transformer)"]
+            ContentExt["Content Extractor<br/>(Whisper/WhisperX)"]
+            VoiceStyle["Voice/Style Transformer<br/>(FreeVC/SO-VITS-SVC)<br/>(Style Transfer: DiffSinger)"]
+            Vocoder["Neural Vocoder<br/>(HiFi-GAN/BigVGAN)"]
+            PostMaster["Post-Mastering<br/>(AudioSR + librosa)"]
+        end
+    end
+    
+    %% Real-time Services
+    Preview["Real-time Preview Gateway<br/>(WebSocket + TensorFlow Lite<br/>Mobile Optimized Models)"]
+    
+    %% Delivery & Monitoring
+    CDN["CDN<br/>(Cloudflare/Vercel Edge)"]
+    Telemetry["Telemetry Service<br/>(Prometheus + Grafana)"]
+    Admin["Admin Console<br/>(React Dashboard)"]
+    
+    %% Client Connections
+    iOS --> API
+    Android --> API
+    Web --> API
+    
+    %% API Gateway Routing
+    API --> Auth
+    API --> Upload
+    API --> Preview
+    API --> CDN
+    API --> Billing
+    API --> Admin
+    
+    %% Upload Flow
+    Upload --> S3Raw
+    Upload --> Queue
+    Queue --> Scheduler
+    Scheduler --> LB
+    
+    %% Storage Connections
+    Queue --> DB
+    Workers --> DB
+    Workers --> Cache
+    Workers --> S3Raw
+    Workers --> S3Processed
+    
+    %% Inference Flow
+    LB --> W1
+    LB --> W2
+    LB --> W3
+    
+    W1 --> Pipeline
+    W2 --> Pipeline
+    W3 --> Pipeline
+    
+    Pipeline --> StemSep
+    StemSep --> ContentExt
+    ContentExt --> VoiceStyle
+    VoiceStyle --> Vocoder
+    Vocoder --> PostMaster
+    PostMaster --> S3Processed
+    
+    %% Model Loading
+    Pipeline --> Registry
+    Workers --> Registry
+    
+    %% Real-time Preview
+    Clients -.->|WebSocket| Preview
+    Preview --> Cache
+    
+    %% Delivery
+    S3Processed --> CDN
+    CDN --> Clients
+    
+    %% Monitoring & Admin
+    Workers --> Telemetry
+    Queue --> Telemetry
+    Telemetry --> Admin
+    DB --> Admin
+    
+    %% Styling
+    classDef client fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef service fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef storage fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef inference fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef ml fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    
+    class iOS,Android,Web client
+    class API,Auth,Billing,Upload,Queue,Scheduler,Preview service
+    class S3Raw,S3Processed,Cache,DB storage
+    class LB,Workers inference
+    class StemSep,ContentExt,VoiceStyle,Vocoder,PostMaster,Registry ml
+

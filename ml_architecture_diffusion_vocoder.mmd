@@ -1,0 +1,66 @@
+graph TB
+    subgraph Input["Input Sources"]
+        A1[Source Audio<br/>Original Track]
+        A2[Style Reference<br/>Target Style Audio]
+        A3[Text Prompt<br/>Optional]
+    end
+    
+    subgraph FeatureExtraction["Feature Extraction"]
+        B1[Mel Spectrogram<br/>librosa]
+        B2[Chroma/MFCC<br/>Musical Features]
+        B3[Pitch/Tempo<br/>CREPE/librosa]
+    end
+    
+    subgraph Diffusion["Diffusion Model"]
+        C1[DiffSinger<br/>Style Transfer]
+        C2[AudioLDM 2<br/>Generation]
+    end
+    
+    subgraph Conditioning["Conditioning"]
+        D1[Style Embeddings<br/>Reference Encoder]
+        D2[Text Embeddings<br/>CLAP/T5]
+        D3[Melody Preservation<br/>Pitch Conditioning]
+    end
+    
+    subgraph Vocoder["Vocoder"]
+        E1[HiFi-GAN<br/>Universal Vocoder]
+    end
+    
+    subgraph Postprocessing["Post-Processing"]
+        F1[Denoising<br/>DeepFilterNet]
+        F2[Loudness Matching<br/>pyloudnorm]
+        F3[Harmonic Enhancement<br/>HPSS]
+    end
+    
+    subgraph Output["Output"]
+        G1[Style-Transferred Audio<br/>44.1 kHz WAV]
+        G2[Generated Melody<br/>Optional]
+    end
+    
+    A1 --> B1
+    A1 --> B2
+    A1 --> B3
+    A2 --> D1
+    A3 --> D2
+    B3 --> D3
+    
+    B1 --> C1
+    D1 --> C1
+    D3 --> C1
+    
+    B2 --> C2
+    D2 --> C2
+    
+    C1 --> E1
+    C2 --> E1
+    
+    E1 --> F1
+    F1 --> F2
+    F2 --> F3
+    F3 --> G1
+    F3 --> G2
+    
+    style C1 fill:#fff3e0
+    style C2 fill:#fff3e0
+    style E1 fill:#e8f5e9
+

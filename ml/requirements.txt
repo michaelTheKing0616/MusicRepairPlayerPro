@@ -1,0 +1,36 @@
+# ML Dependencies for Audio Repair Pipeline - Updated 2025
+
+# Core ML libraries
+torch>=2.5.0
+torchaudio>=2.5.0
+numpy>=1.26.4
+scipy>=1.14.1
+
+# Audio processing
+librosa>=0.10.2
+soundfile>=0.12.1
+
+# DeepFilterNet - Speech enhancement and noise reduction
+# Install from: https://github.com/Rikorose/DeepFilterNet
+# pip install deepfilternet
+deepfilternet>=0.5.6
+
+# Demucs - Source separation
+# Install from: https://github.com/facebookresearch/demucs
+# pip install demucs
+demucs>=4.1.0
+
+# Loudness normalization
+pyloudnorm>=0.1.1
+
+# Storage (if needed for direct Supabase access from Python)
+supabase>=2.10.0
+
+# Utilities
+tqdm>=4.67.0
+python-dotenv>=1.0.1
+structlog>=24.1.0
+
+# Note: DeepFilterNet requires Rust/Cargo
+# Install separately: pip install deepfilternet (after installing Rust)
+# Or use fallback implementation (already in code)

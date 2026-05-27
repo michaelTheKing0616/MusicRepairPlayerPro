@@ -1,0 +1,465 @@
+openapi: 3.0.3
+info:
+  title: AI Music Transformation API
+  version: 1.0.0
+  description: |
+    API for transforming audio with free/open-source AI models:
+    - Stem Separation: Demucs v4 (MIT License)
+    - Content Extraction: WhisperX (MIT License)
+    - Voice Conversion: FreeVC (MIT License)
+    - Style Transfer: DiffSinger (Apache 2.0 License)
+    - Neural Vocoder: HiFi-GAN (MIT License)
+
+servers:
+  - url: https://api.example.com/api/v1
+    description: Production server
+  - url: https://staging-api.example.com/api/v1
+    description: Staging server
+
+tags:
+  - name: Audio
+    description: Audio upload and management
+  - name: Transform
+    description: Transformation jobs
+  - name: Preview
+    description: Real-time previews
+  - name: Jobs
+    description: Job status and results
+
+paths:
+  /audio/upload:
+    post:
+      tags: [Audio]
+      summary: Upload audio file with resumable chunking
+      operationId: uploadAudio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filename:
+                  type: string
+                file_size:
+                  type: integer
+                content_type:
+                  type: string
+                  default: audio/wav
+      responses:
+        '200':
+          description: Upload session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /audio/upload/{uploadId}/chunk:
+    post:
+      tags: [Audio]
+      summary: Upload chunk (resumable upload)
+      operationId: uploadChunk
+      parameters:
+        - name: uploadId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Chunk-Index
+          in: header
+          required: true
+          schema:
+            type: integer
+        - name: X-Total-Chunks
+          in: header
+          required: true
+          schema:
+            type: integer
+        - name: X-Total-Size
+          in: header
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '200':
+          description: Chunk uploaded successfully
+        '400':
+          description: Invalid chunk
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transform:
+    post:
+      tags: [Transform]
+      summary: Request transformation
+      operationId: requestTransform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransformRequest'
+      responses:
+        '202':
+          description: Transformation queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransformResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /jobs/{jobId}/status:
+    get:
+      tags: [Jobs]
+      summary: Get job status
+      operationId: getJobStatus
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatus'
+        '404':
+          description: Job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /jobs/{jobId}/download:
+    get:
+      tags: [Jobs]
+      summary: Download result
+      operationId: downloadResult
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [wav, mp3, flac]
+            default: wav
+      responses:
+        '200':
+          description: File download
+          content:
+            audio/wav:
+              schema:
+                type: string
+                format: binary
+        '302':
+          description: Redirect to CDN
+          headers:
+            Location:
+              schema:
+                type: string
+        '404':
+          description: Job not found or not completed
+
+  /preview/stream:
+    get:
+      tags: [Preview]
+      summary: WebSocket endpoint for streaming preview
+      operationId: streamPreview
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '101':
+          description: Switching to WebSocket protocol
+
+components:
+  schemas:
+    UploadResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [uploaded]
+        file_info:
+          $ref: '#/components/schemas/FileInfo'
+        upload_url:
+          type: string
+          format: uri
+        chunk_size:
+          type: integer
+          default: 5242880
+        resume_url:
+          type: string
+          format: uri
+
+    TransformRequest:
+      type: object
+      required: [job_id, transform_type]
+      properties:
+        job_id:
+          type: string
+        transform_type:
+          type: string
+          enum: [voice, style, combined]
+        params:
+          $ref: '#/components/schemas/TransformParams'
+        options:
+          $ref: '#/components/schemas/TransformOptions'
+
+    TransformParams:
+      type: object
+      properties:
+        voice_preset:
+          type: string
+          description: Voice preset ID (FreeVC model)
+        style_preset:
+          type: string
+          description: Style preset ID (DiffSinger model)
+        intensity:
+          type: number
+          minimum: 0
+          maximum: 1
+          default: 0.85
+          description: Transformation intensity (0.0 = original, 1.0 = full transformation)
+        preserve_pitch:
+          type: boolean
+          default: true
+          description: Whether to preserve original pitch
+
+    TransformOptions:
+      type: object
+      properties:
+        separate_stems:
+          type: boolean
+          default: false
+          description: Use Demucs for stem separation
+        extract_content:
+          type: boolean
+          default: false
+          description: Use WhisperX for transcription
+        quality:
+          type: string
+          enum: [preview, standard, high]
+          default: high
+          description: Processing quality level
+
+    TransformResponse:
+      type: object
+      properties:
+        transform_id:
+          type: string
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [queued]
+        estimated_completion:
+          type: string
+          format: date-time
+        status_url:
+          type: string
+          format: uri
+        queue_position:
+          type: integer
+
+    JobStatus:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        progress:
+          $ref: '#/components/schemas/ProgressInfo'
+        result:
+          $ref: '#/components/schemas/DownloadResult'
+        metadata:
+          $ref: '#/components/schemas/JobMetadata'
+        error:
+          $ref: '#/components/schemas/ErrorInfo'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    ProgressInfo:
+      type: object
+      properties:
+        stage:
+          type: string
+          description: Current processing stage
+        percent_complete:
+          type: number
+          minimum: 0
+          maximum: 100
+        current_operation:
+          type: string
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/StageInfo'
+
+    StageInfo:
+      type: object
+      properties:
+        name:
+          type: string
+          enum: [stem_separation, content_extraction, voice_conversion, style_transfer, vocoder, post_processing]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, failed]
+        duration_ms:
+          type: integer
+          nullable: true
+
+    DownloadResult:
+      type: object
+      properties:
+        download_url:
+          type: string
+          format: uri
+        signed_url:
+          type: string
+          format: uri
+          description: Time-limited signed URL for download
+        file_size:
+          type: integer
+        duration:
+          type: number
+        stems:
+          $ref: '#/components/schemas/Stems'
+
+    Stems:
+      type: object
+      properties:
+        vocals:
+          type: string
+          format: uri
+          nullable: true
+        drums:
+          type: string
+          format: uri
+          nullable: true
+        bass:
+          type: string
+          format: uri
+          nullable: true
+        other:
+          type: string
+          format: uri
+          nullable: true
+
+    JobMetadata:
+      type: object
+      properties:
+        transcription:
+          type: string
+          nullable: true
+        language:
+          type: string
+          nullable: true
+        tempo:
+          type: number
+          nullable: true
+        key:
+          type: string
+          nullable: true
+
+    FileInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        duration:
+          type: number
+        sample_rate:
+          type: integer
+        channels:
+          type: integer
+        file_size:
+          type: integer
+        uploaded_at:
+          type: string
+          format: date-time
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: string
+          nullable: true
+
+    ErrorInfo:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        retryable:
+          type: boolean
+        retry_after:
+          type: integer
+          nullable: true
+          description: Seconds to wait before retry
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login
+
+security:
+  - bearerAuth: []
+

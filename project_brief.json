@@ -1,0 +1,92 @@
+{
+  "mission": "Our mission is to democratize AI-powered music transformation by providing a mobile-first platform that enables users to transform audio into different voices and styles, apply sophisticated audio modulation, and perform stem-aware edits using exclusively free and open-source machine learning models. We believe creative audio transformation should be accessible to everyone, regardless of technical expertise or budget, while maintaining the highest standards of audio quality and user experience. By leveraging open-source ML frameworks, we ensure transparency, community-driven innovation, and cost-effective scalability.",
+  
+  "personas": [
+    {
+      "name": "The Content Creator",
+      "description": "Social media influencers, YouTubers, and podcasters aged 22-35 who need quick voice/style transformations for content production. They value speed, quality exports, and creative filters that help their content stand out.",
+      "pain_points": ["Expensive subscription services", "Complex desktop software", "Long processing times", "Limited mobile options"]
+    },
+    {
+      "name": "The Independent Musician",
+      "description": "Aspiring and established musicians aged 18-40 creating demos, experimenting with vocal styles, or collaborating remotely. They need professional-quality transformations, stem separation for mixing, and export formats compatible with DAWs.",
+      "pain_points": ["Costly studio time", "Limited technical skills for complex tools", "Need for stem isolation", "Integration with existing workflows"]
+    },
+    {
+      "name": "The Casual Creator",
+      "description": "General consumers aged 16-50 who want to have fun transforming their voice, creating memes, or experimenting with audio for personal projects. They prioritize ease of use, instant results, and entertainment value over professional features.",
+      "pain_points": ["Steep learning curves", "Hidden costs", "Overwhelming features", "Privacy concerns with cloud processing"]
+    }
+  ],
+  
+  "feature_priority": [
+    {
+      "name": "Voice Transformation",
+      "priority": "MVP",
+      "short_description": "Transform any voice to different speakers, genders, ages, or celebrity-style voices using pre-trained voice conversion models (e.g., FreeVC, SO-VITS-SVC). Supports real-time preview and batch processing."
+    },
+    {
+      "name": "Style Transfer",
+      "priority": "MVP",
+      "short_description": "Apply musical style transformations (genre, instrument timbre, acoustic characteristics) to audio segments using open-source style transfer models, enabling creative reinterpretations of original recordings."
+    },
+    {
+      "name": "Core Audio Modulation",
+      "priority": "MVP",
+      "short_description": "Essential modulation controls including pitch shift (±12 semitones), tempo/time-stretch (50-200%), reverb, EQ, and basic effects using efficient signal processing libraries (librosa, pydub)."
+    },
+    {
+      "name": "Stem Separation & Editing",
+      "priority": "MVP",
+      "short_description": "Separate audio into stems (vocals, drums, bass, other) using open-source models (Demucs, Spleeter), enable stem-specific transformations, and mix stems back together with volume/gain controls."
+    },
+    {
+      "name": "Audio Export & Sharing",
+      "priority": "MVP",
+      "short_description": "Export transformed audio in multiple formats (MP3, WAV, FLAC) with quality options, direct sharing to social platforms, and cloud backup integration. Support for project saving/loading."
+    },
+    {
+      "name": "Advanced Modulation Suite",
+      "priority": "Post-MVP",
+      "short_description": "Extended effects library including chorus, flanger, phaser, distortion, noise reduction, and AI-powered audio enhancement using models like AudioSR or similar open-source solutions."
+    },
+    {
+      "name": "Real-Time Processing",
+      "priority": "Post-MVP",
+      "short_description": "Low-latency real-time voice transformation and effects processing for live recording/streaming use cases, optimized for mobile hardware constraints using efficient model quantization."
+    },
+    {
+      "name": "Collaborative Features",
+      "priority": "Post-MVP",
+      "short_description": "Multi-user project sharing, cloud-based collaboration, version history, and community model marketplace where users can share and discover custom voice/style models."
+    }
+  ],
+  
+  "legal_constraints": [
+    "Copyright Compliance: Users must own rights or have licenses for source audio. Clear warnings about derivative work rights and DMCA implications. No built-in copyrighted material (samples, loops) without proper licensing.",
+    "Model Licensing: All ML models must comply with their open-source licenses (MIT, Apache 2.0, etc.). Proper attribution in app credits. No redistribution of model weights that violate original licenses.",
+    "Data Privacy: On-device processing preferred; any cloud processing requires explicit consent, GDPR compliance, clear data retention policies, and secure transmission. No training on user audio without explicit opt-in.",
+    "Voice Cloning Ethics: Prohibit deepfake/misrepresentation use cases. Terms of service must prohibit impersonation, fraud, or deceptive use. Require consent for cloning recognizable voices. Age restrictions for voice cloning features.",
+    "Attribution Requirements: When using transformative models, maintain reasonable attribution to original creators where applicable. Support metadata embedding for transformed audio exports.",
+    "Export Compliance: Warn users about platform-specific content policies (e.g., TikTok, Instagram). Do not facilitate automated bulk processing that violates platform ToS or API rate limits."
+  ],
+  
+  "monetization": [
+    {
+      "model": "Freemium",
+      "description": "Free tier includes basic voice transformation (3 voices), simple modulation (pitch, tempo), watermark on exports, 30-second max clip length, and standard export quality (128kbps MP3). Premium unlocks unlimited voices, advanced effects, stem separation, no watermark, unlimited length, high-quality exports (WAV/FLAC), and priority processing.",
+      "pricing_tiers": ["Free (perpetual)", "Premium: $4.99/month or $39.99/year"]
+    },
+    {
+      "model": "Subscription",
+      "description": "Tiered subscription model: Basic ($2.99/month) for core features with limited exports, Pro ($9.99/month) for all features plus cloud storage and collaboration, Enterprise ($29.99/month) for commercial use, API access, and white-label options. All tiers include ad-free experience and customer support.",
+      "pricing_tiers": ["Basic: $2.99/month", "Pro: $9.99/month", "Enterprise: $29.99/month"]
+    },
+    {
+      "model": "Paid Packs",
+      "description": "One-time purchase packs for specific use cases: Voice Pack ($2.99) unlocks 10 premium voices, Effect Pack ($1.99) adds 15 advanced effects, Stem Pack ($4.99) enables unlimited stem separation with higher quality models. Base app remains free with ads, users buy only what they need. No recurring fees, lifetime access to purchased packs.",
+      "pricing_tiers": ["Voice Pack: $2.99", "Effect Pack: $1.99", "Stem Pack: $4.99", "Bundle All: $7.99"]
+    }
+  ]
+}
+
