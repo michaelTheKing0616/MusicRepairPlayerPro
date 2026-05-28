@@ -1,8 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
-
-def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
-def expoVersion = new groovy.json.JsonSlurper().parse(new File(projectRoot, "package.json")).version
+apply plugin: "com.facebook.react"
 
 android {
     namespace "com.musicrepairapp"
@@ -60,8 +58,9 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation "com.facebook.react:react-android"
-    implementation "com.facebook.react:hermes-android"
+    // Versions are set by the React Native Gradle Plugin.
+    implementation("com.facebook.react:react-android")
+    implementation("com.facebook.react:hermes-android")
     // On-device ML inference (optional preview pipeline).
     implementation "org.tensorflow:tensorflow-lite:2.14.0"
     implementation "com.github.wendykierp:JTransforms:3.1"
