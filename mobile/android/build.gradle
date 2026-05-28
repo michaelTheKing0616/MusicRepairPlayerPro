@@ -43,6 +43,13 @@ subprojects { subproject ->
                     def rootCompileSdk = rootProject.ext.has("compileSdkVersion") ? rootProject.ext.compileSdkVersion : 35
                     androidExt.compileSdkVersion rootCompileSdk
                 }
+
+                // AGP 8+ disables BuildConfig by default; legacy RN libs still declare buildConfigField.
+                if (androidExt.hasProperty("buildFeatures")) {
+                    androidExt.buildFeatures {
+                        buildConfig true
+                    }
+                }
             }
         }
     }
