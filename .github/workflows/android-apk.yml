@@ -53,6 +53,9 @@ jobs:
       - name: Setup FFmpegKit Android binary
         run: bash scripts/setup-ffmpeg-kit-android.sh
 
+      - name: Patch legacy React Native Android libraries
+        run: node scripts/patch-rn-legacy-android.js
+
       - name: Patch ffmpeg-kit-react-native for local AAR
         run: node scripts/patch-ffmpeg-kit-android.js
 
