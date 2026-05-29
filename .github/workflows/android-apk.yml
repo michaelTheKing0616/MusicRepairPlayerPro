@@ -66,9 +66,20 @@ jobs:
         run: chmod +x android/gradlew
 
       - name: Build debug APK
-        run: cd android && ./gradlew assembleDebug --no-daemon -x lint --stacktrace
+        run: |
+          set -o pipefail
+          cd android
+          ./gradlew assembleDebug --no-daemon -x lint --stacktrace 2>&1 | tee ../gradle-build.log
         env:
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Xmx4096m
+
+      - name: Upload Gradle build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: mobile/gradle-build.log
+          retention-days: 7
 
       - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4

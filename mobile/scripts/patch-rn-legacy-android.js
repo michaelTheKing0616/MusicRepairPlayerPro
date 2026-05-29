@@ -1,9 +1,6 @@
 /**
  * RN 0.76 resolves the React Gradle plugin via includeBuild in settings.gradle.
- * Some community libraries still declare:
- *   classpath("com.facebook.react:react-native-gradle-plugin")  // empty Maven version
- *   apply plugin: "com.facebook.react"
- * which breaks CI. Strip those from library android/build.gradle files.
+ * Patches legacy library android/build.gradle files for CI compatibility.
  */
 const fs = require('fs');
 const path = require('path');
@@ -59,6 +56,30 @@ dependencies {
 }
 `;
 
+const VOICE_BUILD_GRADLE = `// ${marker}
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.wenkesj.voice"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+    }
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation("com.facebook.react:react-android")
+}
+`;
+
+const FULL_REPLACEMENTS = new Map([
+  ['@react-native-community/slider/android/build.gradle', SLIDER_BUILD_GRADLE],
+  ['@react-native-voice/voice/android/build.gradle', VOICE_BUILD_GRADLE],
+]);
+
 function findAndroidBuildGradleFiles() {
   const results = [];
   for (const entry of fs.readdirSync(nodeModulesDir, { withFileTypes: true })) {
@@ -90,15 +111,24 @@ function needsPatch(content) {
   if (content.includes('react-native-gradle-plugin')) {
     return true;
   }
-  if (!content.includes(marker)) {
-    return false;
+  if (/com\.facebook\.react:react-native:\+/.test(content)) {
+    return true;
   }
-  // Broken partial patch from an earlier script version.
-  return (
-    content.includes('classpath("com.facebook.react:react-native-gradle-plugin")') ||
-    content.includes("classpath('com.facebook.react:react-native-gradle-plugin')") ||
-    /apply plugin:\s*['"]com\.facebook\.react['"]/.test(content)
-  );
+  if (content.includes('jcenter()')) {
+    return true;
+  }
+  if (content.includes('com.android.support:')) {
+    return true;
+  }
+  if (content.includes(marker)) {
+    return (
+      content.includes('classpath("com.facebook.react:react-native-gradle-plugin")') ||
+      content.includes("classpath('com.facebook.react:react-native-gradle-plugin')") ||
+      /apply plugin:\s*['"]com\.facebook\.react['"]/.test(content) ||
+      /com\.facebook\.react:react-native:\+/.test(content)
+    );
+  }
+  return false;
 }
 
 function countBraces(line) {
@@ -107,51 +137,75 @@ function countBraces(line) {
   return { open, close };
 }
 
+function skipBalancedBlock(lines, startIndex, blockName) {
+  let depth = 0;
+  let i = startIndex;
+  for (; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (i === startIndex) {
+      const braces = countBraces(line);
+      depth = braces.open - braces.close;
+      if (depth <= 0) {
+        depth = 1;
+      }
+      continue;
+    }
+    const braces = countBraces(line);
+    depth += braces.open - braces.close;
+    if (depth <= 0) {
+      return i + 1;
+    }
+  }
+  return lines.length;
+}
+
 function patchBuildGradleGeneric(buildGradlePath) {
   let lines = fs.readFileSync(buildGradlePath, 'utf8').split(/\r?\n/);
   lines = lines.filter((line) => !line.includes(marker));
 
   const out = [];
-  let inBuildscript = false;
-  let buildscriptDepth = 0;
   let changed = false;
+  let i = 0;
 
-  for (const line of lines) {
+  while (i < lines.length) {
+    const line = lines[i];
     const trimmed = line.trim();
 
-    if (trimmed.startsWith('buildscript')) {
-      inBuildscript = true;
-      const braces = countBraces(line);
-      buildscriptDepth = braces.open - braces.close;
-      if (buildscriptDepth <= 0) {
-        buildscriptDepth = 1;
-      }
-      changed = true;
-      continue;
-    }
-
-    if (inBuildscript) {
-      const braces = countBraces(line);
-      buildscriptDepth += braces.open - braces.close;
-      if (buildscriptDepth <= 0) {
-        inBuildscript = false;
-      }
+    if (trimmed.startsWith('buildscript') || trimmed.startsWith('allprojects')) {
+      i = skipBalancedBlock(lines, i, trimmed.split(/\s+/)[0]);
       changed = true;
       continue;
     }
 
     if (/apply plugin:\s*['"]com\.facebook\.react['"]/.test(trimmed)) {
+      i += 1;
       changed = true;
       continue;
     }
 
-    if (/api\s+['"]com\.facebook\.react:react-native:\+['"]/.test(trimmed)) {
-      out.push('  implementation("com.facebook.react:react-android")');
+    if (trimmed.includes('jcenter()')) {
+      i += 1;
+      changed = true;
+      continue;
+    }
+
+    if (/com\.android\.support:appcompat/.test(trimmed)) {
+      out.push('    implementation "androidx.appcompat:appcompat:1.6.1"');
+      i += 1;
+      changed = true;
+      continue;
+    }
+
+    if (/com\.facebook\.react:react-native:\+/.test(trimmed)) {
+      const indent = line.match(/^\s*/)?.[0] ?? '  ';
+      out.push(`${indent}implementation("com.facebook.react:react-android")`);
+      i += 1;
       changed = true;
       continue;
     }
 
     out.push(line);
+    i += 1;
   }
 
   if (!changed) {
@@ -174,14 +228,16 @@ function patchBuildGradle(buildGradlePath) {
   }
 
   const normalized = buildGradlePath.replace(/\\/g, '/');
-  if (normalized.endsWith('@react-native-community/slider/android/build.gradle')) {
-    fs.writeFileSync(buildGradlePath, `${SLIDER_BUILD_GRADLE}\n`);
-    console.log(`${marker} Patched ${path.relative(nodeModulesDir, buildGradlePath)} (full replace)`);
+  const suffix = normalized.slice(normalized.indexOf('node_modules/') + 'node_modules/'.length);
+
+  if (FULL_REPLACEMENTS.has(suffix)) {
+    fs.writeFileSync(buildGradlePath, `${FULL_REPLACEMENTS.get(suffix)}\n`);
+    console.log(`${marker} Patched ${suffix} (full replace)`);
     return true;
   }
 
   if (patchBuildGradleGeneric(buildGradlePath)) {
-    console.log(`${marker} Patched ${path.relative(nodeModulesDir, buildGradlePath)}`);
+    console.log(`${marker} Patched ${suffix}`);
     return true;
   }
 
