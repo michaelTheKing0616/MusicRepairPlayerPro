@@ -11,6 +11,54 @@ const path = require('path');
 const nodeModulesDir = path.join(__dirname, '..', 'node_modules');
 const marker = '[patch-rn-legacy-android]';
 
+const SLIDER_BUILD_GRADLE = `// ${marker}
+apply plugin: 'com.android.library'
+
+def getExtOrDefault(name) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['ReactNativeSlider_' + name]
+}
+
+def getExtOrIntegerDefault(name) {
+  return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties['ReactNativeSlider_' + name]).toInteger()
+}
+
+android {
+
+  def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')
+  def major = agpVersion[0].toInteger()
+  def minor = agpVersion[1].toInteger()
+  if ((major == 7 && minor >= 3) || major >= 8) {
+    namespace "com.reactnativecommunity.slider"
+    buildFeatures {
+      buildConfig true
+    }
+  }
+
+  compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
+  buildToolsVersion getExtOrDefault('buildToolsVersion')
+
+  defaultConfig {
+    minSdkVersion getExtOrIntegerDefault('minSdkVersion')
+    targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
+  }
+
+  sourceSets {
+    main {
+      java.srcDirs += ['src', "\${project.buildDir}/generated/source/codegen/java"]
+    }
+  }
+}
+
+repositories {
+  google()
+  mavenCentral()
+}
+
+dependencies {
+  implementation("com.facebook.react:react-android")
+}
+`;
+
 function findAndroidBuildGradleFiles() {
   const results = [];
   for (const entry of fs.readdirSync(nodeModulesDir, { withFileTypes: true })) {
@@ -38,14 +86,30 @@ function findAndroidBuildGradleFiles() {
   return results;
 }
 
-function patchBuildGradle(buildGradlePath) {
+function needsPatch(content) {
+  if (content.includes('react-native-gradle-plugin')) {
+    return true;
+  }
+  if (!content.includes(marker)) {
+    return false;
+  }
+  // Broken partial patch from an earlier script version.
+  return (
+    content.includes('classpath("com.facebook.react:react-native-gradle-plugin")') ||
+    content.includes("classpath('com.facebook.react:react-native-gradle-plugin')") ||
+    /apply plugin:\s*['"]com\.facebook\.react['"]/.test(content)
+  );
+}
+
+function countBraces(line) {
+  const open = (line.match(/{/g) || []).length;
+  const close = (line.match(/}/g) || []).length;
+  return { open, close };
+}
+
+function patchBuildGradleGeneric(buildGradlePath) {
   let lines = fs.readFileSync(buildGradlePath, 'utf8').split(/\r?\n/);
-  if (!lines.some((line) => line.includes('react-native-gradle-plugin'))) {
-    return false;
-  }
-  if (lines[0].includes(marker)) {
-    return false;
-  }
+  lines = lines.filter((line) => !line.includes(marker));
 
   const out = [];
   let inBuildscript = false;
@@ -57,21 +121,22 @@ function patchBuildGradle(buildGradlePath) {
 
     if (trimmed.startsWith('buildscript')) {
       inBuildscript = true;
-      buildscriptDepth = 0;
+      const braces = countBraces(line);
+      buildscriptDepth = braces.open - braces.close;
+      if (buildscriptDepth <= 0) {
+        buildscriptDepth = 1;
+      }
       changed = true;
       continue;
     }
 
     if (inBuildscript) {
-      if (trimmed.includes('{')) {
-        buildscriptDepth += (line.match(/{/g) || []).length;
-      }
-      if (trimmed.includes('}')) {
-        buildscriptDepth -= (line.match(/}/g) || []).length;
-      }
-      if (buildscriptDepth <= 0 && trimmed === '}') {
+      const braces = countBraces(line);
+      buildscriptDepth += braces.open - braces.close;
+      if (buildscriptDepth <= 0) {
         inBuildscript = false;
       }
+      changed = true;
       continue;
     }
 
@@ -93,17 +158,34 @@ function patchBuildGradle(buildGradlePath) {
     return false;
   }
 
-  while (out.length > 0 && out[0].trim() === '') {
-    out.shift();
-  }
-  while (out.length > 0 && out[0].trim() === '}') {
+  while (out.length > 0 && (out[0].trim() === '' || out[0].trim() === '}')) {
     out.shift();
   }
 
-  const content = `// ${marker}\n${out.join('\n')}\n`;
+  const content = `// ${marker}\n${out.join('\n').trim()}\n`;
   fs.writeFileSync(buildGradlePath, content);
-  console.log(`${marker} Patched ${path.relative(nodeModulesDir, buildGradlePath)}`);
   return true;
+}
+
+function patchBuildGradle(buildGradlePath) {
+  const content = fs.readFileSync(buildGradlePath, 'utf8');
+  if (!needsPatch(content)) {
+    return false;
+  }
+
+  const normalized = buildGradlePath.replace(/\\/g, '/');
+  if (normalized.endsWith('@react-native-community/slider/android/build.gradle')) {
+    fs.writeFileSync(buildGradlePath, `${SLIDER_BUILD_GRADLE}\n`);
+    console.log(`${marker} Patched ${path.relative(nodeModulesDir, buildGradlePath)} (full replace)`);
+    return true;
+  }
+
+  if (patchBuildGradleGeneric(buildGradlePath)) {
+    console.log(`${marker} Patched ${path.relative(nodeModulesDir, buildGradlePath)}`);
+    return true;
+  }
+
+  return false;
 }
 
 if (!fs.existsSync(nodeModulesDir)) {
