@@ -67,6 +67,11 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
 
 dependencies {
@@ -75,9 +80,65 @@ dependencies {
 }
 `;
 
+const TRACK_PLAYER_BUILD_GRADLE = `// ${marker}
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:\${rootProject.ext.kotlinVersion}"
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+def getExtOrIntegerDefault(name) {
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties['RNTP_' + name]).toInteger()
+}
+
+android {
+    compileSdkVersion getExtOrIntegerDefault('compileSdkVersion')
+    namespace 'com.doublesymmetry.trackplayer'
+
+    defaultConfig {
+        minSdkVersion getExtOrIntegerDefault('minSdkVersion')
+        targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
+        versionCode 300
+        versionName '3.0'
+        consumerProguardFiles 'proguard-rules.txt'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+dependencies {
+    implementation 'com.github.doublesymmetry:kotlinaudio:v2.1.0'
+    implementation("com.facebook.react:react-android")
+    implementation "androidx.core:core-ktx:1.9.0"
+    implementation "androidx.localbroadcastmanager:localbroadcastmanager:1.1.0"
+    implementation "androidx.lifecycle:lifecycle-process:2.5.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3"
+}
+`;
+
 const FULL_REPLACEMENTS = new Map([
   ['@react-native-community/slider/android/build.gradle', SLIDER_BUILD_GRADLE],
   ['@react-native-voice/voice/android/build.gradle', VOICE_BUILD_GRADLE],
+  ['react-native-track-player/android/build.gradle', TRACK_PLAYER_BUILD_GRADLE],
 ]);
 
 function findAndroidBuildGradleFiles() {
@@ -137,61 +198,72 @@ function countBraces(line) {
   return { open, close };
 }
 
-function skipBalancedBlock(lines, startIndex, blockName) {
-  let depth = 0;
-  let i = startIndex;
-  for (; i < lines.length; i += 1) {
-    const line = lines[i];
-    if (i === startIndex) {
-      const braces = countBraces(line);
-      depth = braces.open - braces.close;
-      if (depth <= 0) {
-        depth = 1;
-      }
-      continue;
-    }
-    const braces = countBraces(line);
-    depth += braces.open - braces.close;
-    if (depth <= 0) {
-      return i + 1;
-    }
-  }
-  return lines.length;
-}
-
 function patchBuildGradleGeneric(buildGradlePath) {
   let lines = fs.readFileSync(buildGradlePath, 'utf8').split(/\r?\n/);
   lines = lines.filter((line) => !line.includes(marker));
 
   const out = [];
   let changed = false;
-  let i = 0;
+  let inBuildscript = false;
+  let buildscriptDepth = 0;
+  let buildscriptLines = [];
 
-  while (i < lines.length) {
-    const line = lines[i];
+  function flushBuildscript() {
+    if (buildscriptLines.length === 0) {
+      return;
+    }
+    const kept = buildscriptLines.filter(
+      (scriptLine) =>
+        !scriptLine.includes('react-native-gradle-plugin') &&
+        !scriptLine.includes('com.facebook.react:react-native-gradle-plugin'),
+    );
+    if (kept.length !== buildscriptLines.length) {
+      changed = true;
+    }
+    if (kept.length > 0) {
+      out.push(...kept);
+    }
+    buildscriptLines = [];
+  }
+
+  for (const line of lines) {
     const trimmed = line.trim();
 
-    if (trimmed.startsWith('buildscript') || trimmed.startsWith('allprojects')) {
-      i = skipBalancedBlock(lines, i, trimmed.split(/\s+/)[0]);
-      changed = true;
+    if (trimmed.startsWith('buildscript')) {
+      flushBuildscript();
+      inBuildscript = true;
+      const braces = countBraces(line);
+      buildscriptDepth = braces.open - braces.close;
+      if (buildscriptDepth <= 0) {
+        buildscriptDepth = 1;
+      }
+      buildscriptLines = [line];
+      continue;
+    }
+
+    if (inBuildscript) {
+      buildscriptLines.push(line);
+      const braces = countBraces(line);
+      buildscriptDepth += braces.open - braces.close;
+      if (buildscriptDepth <= 0) {
+        inBuildscript = false;
+        flushBuildscript();
+      }
       continue;
     }
 
     if (/apply plugin:\s*['"]com\.facebook\.react['"]/.test(trimmed)) {
-      i += 1;
       changed = true;
       continue;
     }
 
     if (trimmed.includes('jcenter()')) {
-      i += 1;
       changed = true;
       continue;
     }
 
     if (/com\.android\.support:appcompat/.test(trimmed)) {
       out.push('    implementation "androidx.appcompat:appcompat:1.6.1"');
-      i += 1;
       changed = true;
       continue;
     }
@@ -199,14 +271,14 @@ function patchBuildGradleGeneric(buildGradlePath) {
     if (/com\.facebook\.react:react-native:\+/.test(trimmed)) {
       const indent = line.match(/^\s*/)?.[0] ?? '  ';
       out.push(`${indent}implementation("com.facebook.react:react-android")`);
-      i += 1;
       changed = true;
       continue;
     }
 
     out.push(line);
-    i += 1;
   }
+
+  flushBuildscript();
 
   if (!changed) {
     return false;
@@ -221,19 +293,28 @@ function patchBuildGradleGeneric(buildGradlePath) {
   return true;
 }
 
+function normalizeGradle(content) {
+  return content.replace(/\r\n/g, '\n').replace(/\/\/ \[patch-rn-legacy-android\]\n?/, '').trim();
+}
+
 function patchBuildGradle(buildGradlePath) {
   const content = fs.readFileSync(buildGradlePath, 'utf8');
-  if (!needsPatch(content)) {
-    return false;
-  }
-
   const normalized = buildGradlePath.replace(/\\/g, '/');
   const suffix = normalized.slice(normalized.indexOf('node_modules/') + 'node_modules/'.length);
 
   if (FULL_REPLACEMENTS.has(suffix)) {
-    fs.writeFileSync(buildGradlePath, `${FULL_REPLACEMENTS.get(suffix)}\n`);
-    console.log(`${marker} Patched ${suffix} (full replace)`);
-    return true;
+    const expected = normalizeGradle(`${FULL_REPLACEMENTS.get(suffix)}\n`);
+    const current = normalizeGradle(content);
+    if (current !== expected || needsPatch(content)) {
+      fs.writeFileSync(buildGradlePath, `${FULL_REPLACEMENTS.get(suffix)}\n`);
+      console.log(`${marker} Patched ${suffix} (full replace)`);
+      return true;
+    }
+    return false;
+  }
+
+  if (!needsPatch(content)) {
+    return false;
   }
 
   if (patchBuildGradleGeneric(buildGradlePath)) {

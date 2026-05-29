@@ -70,8 +70,18 @@ jobs:
           set -o pipefail
           cd android
           ./gradlew assembleDebug --no-daemon -x lint --stacktrace 2>&1 | tee ../gradle-build.log
+          exit "${PIPESTATUS[0]}"
         env:
           GRADLE_OPTS: -Dorg.gradle.daemon=false -Xmx4096m
+
+      - name: Print Gradle failure summary
+        if: failure()
+        working-directory: mobile
+        run: |
+          echo "=== Last 120 lines of gradle-build.log ==="
+          tail -n 120 gradle-build.log || true
+          echo "=== First failure context ==="
+          grep -n "FAILED\\|error:\\|What went wrong\\|Execution failed" gradle-build.log | tail -n 40 || true
 
       - name: Upload Gradle build log on failure
         if: failure()
