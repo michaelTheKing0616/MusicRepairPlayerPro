@@ -19,42 +19,43 @@ buildscript {
     }
 }
 
-plugins {
-    id("com.facebook.react.rootproject")
-}
-
-// AGP 8+ requires every Android library module to declare a namespace.
-subprojects { subproject ->
-    subproject.afterEvaluate {
-        if (subproject.plugins.hasPlugin("com.android.library")) {
-            def androidExt = subproject.extensions.findByName("android")
-            if (androidExt != null) {
-                def currentNamespace = androidExt.hasProperty("namespace") ? androidExt.namespace : null
-                if (currentNamespace == null || currentNamespace.toString().trim().isEmpty()) {
-                    def manifestFile = subproject.file("src/main/AndroidManifest.xml")
-                    if (manifestFile.exists()) {
-                        def parsedManifest = new XmlParser().parse(manifestFile)
-                        def packageName = parsedManifest.@package?.toString()
-                        if (packageName) {
-                            androidExt.namespace = packageName
-                        }
-                    }
-                }
-
-                if (androidExt.hasProperty("compileSdkVersion")) {
-                    def rootCompileSdk = rootProject.ext.has("compileSdkVersion") ? rootProject.ext.compileSdkVersion : 35
-                    androidExt.compileSdkVersion rootCompileSdk
-                }
-
-                // AGP 8+ disables BuildConfig by default; legacy RN libs still declare buildConfigField.
-                if (androidExt.hasProperty("buildFeatures")) {
-                    androidExt.buildFeatures {
-                        buildConfig true
-                    }
+// Register before rootproject plugin (evaluationDependsOn :app evaluates subprojects early).
+gradle.beforeProject { project ->
+    if (project == project.rootProject) {
+        return
+    }
+    project.plugins.withId("com.android.library") {
+        def androidExt = project.extensions.findByName("android")
+        if (androidExt == null) {
+            return
+        }
+        def currentNamespace = androidExt.hasProperty("namespace") ? androidExt.namespace : null
+        if (currentNamespace == null || currentNamespace.toString().trim().isEmpty()) {
+            def manifestFile = project.file("src/main/AndroidManifest.xml")
+            if (manifestFile.exists()) {
+                def parsedManifest = new XmlParser().parse(manifestFile)
+                def packageName = parsedManifest.@package?.toString()
+                if (packageName) {
+                    androidExt.namespace = packageName
                 }
             }
         }
+
+        if (androidExt.hasProperty("compileSdkVersion")) {
+            def rootCompileSdk = rootProject.ext.has("compileSdkVersion") ? rootProject.ext.compileSdkVersion : 35
+            androidExt.compileSdkVersion rootCompileSdk
+        }
+
+        if (androidExt.hasProperty("buildFeatures")) {
+            androidExt.buildFeatures {
+                buildConfig true
+            }
+        }
     }
+}
+
+plugins {
+    id("com.facebook.react.rootproject")
 }
 
 allprojects {
@@ -75,4 +76,3 @@ allprojects {
         maven { url "https://www.jitpack.io" }
     }
 }
-
