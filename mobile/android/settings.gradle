@@ -10,5 +10,44 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
     ex.autolinkLibrariesFromCommand()
 }
 
+// Must run in settings (before root build.gradle) so hooks exist before
+// com.facebook.react.rootproject eagerly evaluates subprojects.
+gradle.beforeProject { project ->
+    if (project == project.rootProject) {
+        return
+    }
+    project.plugins.withId("com.android.library") {
+        def androidExt = project.extensions.findByName("android")
+        if (androidExt == null) {
+            return
+        }
+        def currentNamespace = androidExt.hasProperty("namespace") ? androidExt.namespace : null
+        if (currentNamespace == null || currentNamespace.toString().trim().isEmpty()) {
+            def manifestFile = project.file("src/main/AndroidManifest.xml")
+            if (manifestFile.exists()) {
+                def parsedManifest = new XmlParser().parse(manifestFile)
+                def packageName = parsedManifest.@package?.toString()
+                if (packageName) {
+                    androidExt.namespace = packageName
+                }
+            }
+        }
+
+        if (androidExt.hasProperty("compileSdkVersion")) {
+            def rootCompileSdk = 35
+            if (project.rootProject.ext.has("compileSdkVersion")) {
+                rootCompileSdk = project.rootProject.ext.compileSdkVersion
+            }
+            androidExt.compileSdkVersion rootCompileSdk
+        }
+
+        if (androidExt.hasProperty("buildFeatures")) {
+            androidExt.buildFeatures {
+                buildConfig true
+            }
+        }
+    }
+}
+
 rootProject.name = "MusicRepairApp"
 include(":app")
