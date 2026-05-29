@@ -10,7 +10,9 @@
     "test": "jest",
     "type-check": "tsc --noEmit",
     "export-presets": "npx tsx scripts/export-presets.ts",
-    "download-ml-models": "node -e \"require('child_process').execSync(process.platform==='win32'?'powershell -ExecutionPolicy Bypass -File scripts/download-ml-models.ps1':'bash scripts/download-ml-models.sh',{stdio:'inherit',cwd:process.cwd()})\""
+    "download-ml-models": "node -e \"require('child_process').execSync(process.platform==='win32'?'powershell -ExecutionPolicy Bypass -File scripts/download-ml-models.ps1':'bash scripts/download-ml-models.sh',{stdio:'inherit',cwd:process.cwd()})\"",
+    "setup-ffmpeg-kit-android": "node -e \"require('child_process').execSync(process.platform==='win32'?'powershell -ExecutionPolicy Bypass -File scripts/setup-ffmpeg-kit-android.ps1':'bash scripts/setup-ffmpeg-kit-android.sh',{stdio:'inherit',cwd:process.cwd()})\"",
+    "postinstall": "node scripts/patch-ffmpeg-kit-android.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",

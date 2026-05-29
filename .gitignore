@@ -49,6 +49,8 @@ mobile/android/.cxx/
 mobile/android/captures/
 mobile/android/gradle-8.3-bin/
 mobile/android/gradle-8.3-bin.zip
+mobile/android/libs/*.aar
+!mobile/android/libs/.gitkeep
 *.apk
 *.aab
 *.keystore

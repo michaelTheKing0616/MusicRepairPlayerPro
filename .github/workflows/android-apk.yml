@@ -44,6 +44,18 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Cache FFmpegKit Android AAR
+        uses: actions/cache@v4
+        with:
+          path: mobile/android/libs/ffmpeg-kit-full-gpl.aar
+          key: ffmpeg-kit-full-gpl-v1
+
+      - name: Setup FFmpegKit Android binary
+        run: bash scripts/setup-ffmpeg-kit-android.sh
+
+      - name: Patch ffmpeg-kit-react-native for local AAR
+        run: node scripts/patch-ffmpeg-kit-android.js
+
       - name: Download on-device ML models
         run: bash scripts/download-ml-models.sh
 
