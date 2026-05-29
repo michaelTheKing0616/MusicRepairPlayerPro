@@ -19,8 +19,11 @@ buildscript {
     }
 }
 
+plugins {
+    id("com.facebook.react.rootproject")
+}
+
 // AGP 8+ requires every Android library module to declare a namespace.
-// Register before React Native root plugin evaluates subprojects.
 subprojects { subproject ->
     subproject.afterEvaluate {
         if (subproject.plugins.hasPlugin("com.android.library")) {
@@ -52,10 +55,6 @@ subprojects { subproject ->
             }
         }
     }
-}
-
-plugins {
-    id("com.facebook.react.rootproject")
 }
 
 allprojects {
